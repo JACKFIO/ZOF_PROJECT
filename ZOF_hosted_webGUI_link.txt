@@ -1,0 +1,62 @@
+
+ZOF SOLVER - DEPLOYMENT INFORMATION
+
+
+Name: OLUFUNSO DAVID OLUWADARASIMI
+Matric Number: 22CG031924
+
+Course: CSC 431 - Computational Science and Numerical Methods
+
+Session: 2024/2025 Alpha Semester
+
+
+LIVE APPLICATION URL
+
+https://zof-solver.onrender.com
+(Replace with your actual deployment URL)
+
+-------------------------------------
+GITHUB REPOSITORY
+-------------------------------------
+https://github.com/yourusername/ZOF_Project
+(Replace with your actual GitHub repository URL)
+
+-------------------------------------
+DEPLOYMENT PLATFORM
+-------------------------------------
+Platform Used: Render.com / PythonAnywhere / Streamlit Cloud
+(Specify which platform you used)
+
+-------------------------------------
+PROJECT COMPONENTS
+-------------------------------------
+✅ ZOF_CLI.py - Command-line interface implemented
+✅ app.py - Flask web application implemented
+✅ index.html - Web interface designed
+✅ requirements.txt - Dependencies listed
+✅ README.md - Documentation completed
+
+-------------------------------------
+IMPLEMENTED METHODS
+-------------------------------------
+1. Bisection Method
+2. Regula Falsi (False Position) Method
+3. Secant Method
+4. Newton-Raphson Method
+5. Fixed Point Iteration Method
+6. Modified Secant Method
+
+-------------------------------------
+TESTING STATUS
+-------------------------------------
+✅ All 6 methods tested and verified
+✅ CLI application functional
+✅ Web GUI responsive and interactive
+✅ Deployed and accessible online
+
+
+Date Submitted: 11TH NOVEMBER 2025
+Time Submitted: [Time]
+
+
+END OF SUBMISSION INFORMATION
