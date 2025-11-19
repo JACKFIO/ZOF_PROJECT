@@ -1,10 +1,10 @@
 """
-app.py - Zero of Functions Solver Web Application (Flask)
+app.py - Zero of Functions Solver Web Application (Vercel Optimized)
+No NumPy dependency - uses only standard library
 """
 
 from flask import Flask, render_template, request, jsonify
 import math
-import numpy as np
 from typing import Callable, Dict, List
 
 app = Flask(__name__)
@@ -19,12 +19,19 @@ class ZOFSolver:
     
     def parse_function(self, func_str: str) -> Callable:
         """Convert string equation to callable function"""
+        # Create safe namespace with math functions
+        safe_dict = {
+            "sin": math.sin, "cos": math.cos, "tan": math.tan,
+            "exp": math.exp, "log": math.log, "sqrt": math.sqrt,
+            "pi": math.pi, "e": math.e, "abs": abs,
+            "asin": math.asin, "acos": math.acos, "atan": math.atan,
+            "sinh": math.sinh, "cosh": math.cosh, "tanh": math.tanh,
+            "pow": pow
+        }
+        
         def f(x):
-            return eval(func_str, {"x": x, "math": math, "np": np, 
-                                   "sin": math.sin, "cos": math.cos, 
-                                   "tan": math.tan, "exp": math.exp, 
-                                   "log": math.log, "sqrt": math.sqrt,
-                                   "pi": math.pi, "e": math.e})
+            safe_dict["x"] = x
+            return eval(func_str, {"__builtins__": {}}, safe_dict)
         return f
     
     def parse_derivative(self, func_str: str) -> Callable:
@@ -38,7 +45,12 @@ class ZOFSolver:
         """Bisection Method"""
         self.iteration_data = []
         
-        if f(a) * f(b) >= 0:
+        try:
+            fa, fb = f(a), f(b)
+        except Exception as e:
+            return {"error": f"Error evaluating function: {str(e)}"}
+        
+        if fa * fb >= 0:
             return {"error": "f(a) and f(b) must have opposite signs"}
         
         for i in range(self.max_iterations):
@@ -80,7 +92,12 @@ class ZOFSolver:
         """Regula Falsi Method"""
         self.iteration_data = []
         
-        if f(a) * f(b) >= 0:
+        try:
+            fa, fb = f(a), f(b)
+        except Exception as e:
+            return {"error": f"Error evaluating function: {str(e)}"}
+        
+        if fa * fb >= 0:
             return {"error": "f(a) and f(b) must have opposite signs"}
         
         c_old = a
@@ -127,13 +144,21 @@ class ZOFSolver:
         self.iteration_data = []
         
         for i in range(self.max_iterations):
-            f0, f1 = f(x0), f(x1)
+            try:
+                f0, f1 = f(x0), f(x1)
+            except Exception as e:
+                return {"error": f"Error evaluating function: {str(e)}"}
             
             if abs(f1 - f0) < 1e-12:
-                return {"error": "Division by zero"}
+                return {"error": "Division by zero - f(x1) ≈ f(x0)"}
             
             x2 = x1 - f1 * (x1 - x0) / (f1 - f0)
-            f2 = f(x2)
+            
+            try:
+                f2 = f(x2)
+            except Exception as e:
+                return {"error": f"Error evaluating function at x2: {str(e)}"}
+            
             error = abs(x2 - x1)
             
             self.iteration_data.append({
@@ -169,8 +194,11 @@ class ZOFSolver:
         x = x0
         
         for i in range(self.max_iterations):
-            fx = f(x)
-            dfx = df(x)
+            try:
+                fx = f(x)
+                dfx = df(x)
+            except Exception as e:
+                return {"error": f"Error evaluating function: {str(e)}"}
             
             if abs(dfx) < 1e-12:
                 return {"error": "Derivative too close to zero"}
@@ -211,7 +239,11 @@ class ZOFSolver:
         x = x0
         
         for i in range(self.max_iterations):
-            x_new = g(x)
+            try:
+                x_new = g(x)
+            except Exception as e:
+                return {"error": f"Error evaluating g(x): {str(e)}"}
+            
             error = abs(x_new - x)
             
             self.iteration_data.append({
@@ -229,6 +261,10 @@ class ZOFSolver:
                     "data": self.iteration_data
                 }
             
+            # Check for divergence
+            if abs(x_new) > 1e10:
+                return {"error": "Method diverging - try different initial guess or g(x)"}
+            
             x = x_new
         
         return {
@@ -245,12 +281,15 @@ class ZOFSolver:
         x = x0
         
         for i in range(self.max_iterations):
-            fx = f(x)
-            fx_delta = f(x + delta * x) if x != 0 else f(x + delta)
+            try:
+                fx = f(x)
+                fx_delta = f(x + delta * x) if x != 0 else f(x + delta)
+            except Exception as e:
+                return {"error": f"Error evaluating function: {str(e)}"}
             
             denominator = fx_delta - fx
             if abs(denominator) < 1e-12:
-                return {"error": "Division by zero"}
+                return {"error": "Division by zero in modified secant"}
             
             x_new = x - (delta * x * fx) / denominator if x != 0 else x - (delta * fx) / denominator
             error = abs(x_new - x)
@@ -298,8 +337,16 @@ def solve():
         tolerance = float(data.get('tolerance', 1e-6))
         max_iter = int(data.get('max_iterations', 100))
         
+        # Validate inputs
+        if not method or not function:
+            return jsonify({"error": "Method and function are required"}), 400
+        
         solver = ZOFSolver(tolerance=tolerance, max_iterations=max_iter)
-        f = solver.parse_function(function)
+        
+        try:
+            f = solver.parse_function(function)
+        except Exception as e:
+            return jsonify({"error": f"Invalid function syntax: {str(e)}"}), 400
         
         result = None
         
@@ -325,6 +372,8 @@ def solve():
         
         elif method == 'fixed_point':
             g_function = data.get('g_function')
+            if not g_function:
+                return jsonify({"error": "g(x) function is required for Fixed Point method"}), 400
             g = solver.parse_function(g_function)
             x0 = float(data.get('x0'))
             result = solver.fixed_point_iteration(g, x0)
@@ -334,15 +383,23 @@ def solve():
             delta = float(data.get('delta', 0.01))
             result = solver.modified_secant_method(f, x0, delta)
         
+        else:
+            return jsonify({"error": "Invalid method selected"}), 400
+        
         if result and "error" not in result:
             result['root'] = round(result['root'], 10)
             result['error'] = round(result['error'], 10)
         
         return jsonify(result)
     
+    except ValueError as e:
+        return jsonify({"error": f"Invalid input value: {str(e)}"}), 400
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+
+# For Vercel deployment
+app.debug = False
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
